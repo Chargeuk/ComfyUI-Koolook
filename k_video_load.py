@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import os
+import inspect
 import re
 from collections.abc import Mapping
 from typing import Optional
@@ -29,7 +30,10 @@ try:
     # VHS LoadVideoPath wraps the shared decoder with path validation that
     # rejects absolute/local handoff paths. Existing local videos can use the
     # same shared decoder directly; fail loudly if a future VHS refactor moves it.
-    _VHS_LOAD_VIDEO_FN = _VHS_LoadVideoPath.load_video.__globals__.get("load_video")
+    # DiskAudio integration wraps this method; its globals belong to the
+    # decorator. Resolve only the decoder lookup through the original method,
+    # keeping the real wrapped VHS dispatch for normal paths below.
+    _VHS_LOAD_VIDEO_FN = inspect.unwrap(_VHS_LoadVideoPath.load_video).__globals__.get("load_video")
     if _VHS_LOAD_VIDEO_FN is None:
         raise RuntimeError("VHS shared load_video function not found.")
     _VHS_AVAILABLE = True
